@@ -1,20 +1,19 @@
 '''
-Created on 13.02.2013
+Created on 12.02.2018
 
-Modified on 21.01.2018
 
-Provides the database API to access the forum persistent data.
+Provides the database API to access the RMS persistent data.
 
-@author: ivan
-@author: mika oja
+@author: Dat Le
+@author: Ahmad Shangan
 '''
 
 from datetime import datetime
 import time, sqlite3, re, os
 #Default paths for .db and .sql files to create and populate the database.
-DEFAULT_DB_PATH = 'db/forum.db'
-DEFAULT_SCHEMA = "db/forum_schema_dump.sql"
-DEFAULT_DATA_DUMP = "db/forum_data_dump.sql"
+DEFAULT_DB_PATH = 'db/rms'
+DEFAULT_SCHEMA = "db/rms_schema_dump.sql"
+DEFAULT_DATA_DUMP = "db/rms_data_dump.sql"
 
 
 class Engine(object):
@@ -33,7 +32,7 @@ class Engine(object):
 
     :param db_path: The path of the database file (always with respect to the
         calling script. If not specified, the Engine will use the file located
-        at *db/forum.db*
+        at *db/rms*
 
     '''
     def __init__(self, db_path=None):
@@ -79,8 +78,11 @@ class Engine(object):
         cur.execute(keys_on)
         with con:
             cur = con.cursor()
-            cur.execute("DELETE FROM messages")
-            cur.execute("DELETE FROM users")
+            cur.execute("DELETE FROM vendor")
+            cur.execute("DELETE FROM user")
+            cur.execute("DELETE FROM stock")
+            cur.execute("DELETE FROM restaurant")
+            cur.execute("DELETE FROM item")
             #NOTE since we have ON DELETE CASCADE BOTH IN users_profile AND
             #friends, WE DO NOT HAVE TO WORRY TO CLEAR THOSE TABLES.
 
@@ -90,7 +92,7 @@ class Engine(object):
         Create programmatically the tables from a schema file.
 
         :param schema: path to the .sql schema file. If this parmeter is
-            None, then *db/forum_schema_dump.sql* is utilized.
+            None, then *db/rms_schema_dump.sql* is utilized.
 
         '''
         con = sqlite3.connect(self.db_path)
@@ -109,7 +111,7 @@ class Engine(object):
         Populate programmatically the tables from a dump file.
 
         :param dump:  path to the .sql dump file. If this parmeter is
-            None, then *db/forum_data_dump.sql* is utilized.
+            None, then *db/rms_data_dump.sql* is utilized.
 
         '''
         keys_on = 'PRAGMA foreign_keys = ON'
@@ -126,27 +128,25 @@ class Engine(object):
             cur.executescript(sql)
 
     #METHODS TO CREATE THE TABLES PROGRAMMATICALLY WITHOUT USING SQL SCRIPT
-    def create_messages_table(self):
+    def create_user_table(self):
         '''
-        Create the table ``messages`` programmatically, without using .sql file.
+        Create the table ``item`` programmatically, without using .sql file.
 
-        Print an error message in the console if it could not be created.
+        Print an error item in the console if it could not be created.
 
         :return: ``True`` if the table was successfully created or ``False``
             otherwise.
 
         '''
         keys_on = 'PRAGMA foreign_keys = ON'
-        stmnt = 'CREATE TABLE messages(message_id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                    title TEXT, body TEXT, timestamp INTEGER, \
-                    ip TEXT, timesviewed INTEGER, \
-                    reply_to INTEGER, \
-                    user_nickname TEXT, user_id INTEGER, \
-                    editor_nickname TEXT, \
-                    FOREIGN KEY(reply_to) REFERENCES messages(message_id) \
-                    ON DELETE CASCADE, \
-                    FOREIGN KEY(user_id,user_nickname) \
-                    REFERENCES users(user_id, nickname) ON DELETE SET NULL)'
+        stmnt = 'CREATE TABLE user(userId INTEGER PRIMARY KEY AUTOINCREMENT,\
+                	firstname TEXT,\
+                	lastname TEXT,\
+                	username TEXT,\
+                	email	TEXT,\
+                	password	TEXT,\
+                	phone	TEXT,\
+                	dob	TEXT )'
         con = sqlite3.connect(self.db_path)
         with con:
             #Get the cursor object.
@@ -161,9 +161,9 @@ class Engine(object):
                 return False
         return True
 
-    def create_users_table(self):
+    def create_vendor_table(self):
         '''
-        Create the table ``users`` programmatically, without using .sql file.
+        Create the table ``vendor`` programmatically, without using .sql file.
 
         Print an error message in the console if it could not be created.
 
@@ -172,10 +172,14 @@ class Engine(object):
 
         '''
         keys_on = 'PRAGMA foreign_keys = ON'
-        stmnt = 'CREATE TABLE users(user_id INTEGER PRIMARY KEY,\
-                                    nickname TEXT UNIQUE, regDate INTEGER,\
-                                    lastLogin INTEGER, timesviewed INTEGER,\
-                                    UNIQUE(user_id, nickname))'
+        stmnt = 'CREATE TABLE vendor(`userId`	INTEGER PRIMARY KEY AUTOINCREMENT,\
+    	`firstname`	TEXT,\
+    	`lastname`	TEXT,\
+    	`username`	TEXT,\
+    	`email`	TEXT,\
+    	`password`	TEXT,\
+    	`phone`	TEXT,\
+    	`dob`	TEXT)'
         #Connects to the database. Gets a connection object
         con = sqlite3.connect(self.db_path)
         with con:
@@ -191,9 +195,9 @@ class Engine(object):
                 return False
         return True
 
-    def create_users_profile_table(self):
+    def create_stock_table(self):
         '''
-        Create the table ``users_profile`` programmatically, without using
+        Create the table ``stock`` programmatically, without using
         .sql file.
 
         Print an error message in the console if it could not be created.
@@ -203,17 +207,21 @@ class Engine(object):
 
         '''
         keys_on = 'PRAGMA foreign_keys = ON'
-
-        '''
-        #TASK3 TODO#
-        Write the SQL Statement and neccesary codeto create users_profile table
-        '''
-        stmnt = 'CREATE TABLE users_profile(user_id INTEGER PRIMARY KEY,\
-                                    firstname TEXT, lastname TEXT, email TEXT,\
-                                    website TEXT, picture TEXT, mobile TEXT,\
-                                    skype TEXT, age INTEGER, residence TEXT,\
-                                    gender TEXT, signature TEXT, avatar TEXT,\
-                                    FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE)'
+        stmnt = 'CREATE TABLE stock(`id`	INTEGER PRIMARY KEY AUTOINCREMENT,\
+    	`price`	REAL,\
+    	`quantity`	INTEGER,\
+    	`quantityInStock`	INTEGER,\
+    	`expireDate`	TEXT,\
+    	`date`	TEXT,\
+    	`transactionType`	TEXT,\
+    	`vendorId`	INTEGER,\
+    	`itemId`	INTEGER,\
+    	`restaurantId`	INTEGER,\
+    	`userId`	INTEGER,\
+    	FOREIGN KEY(vendorId) references vendor(vendorId) ON DELETE CASCADE,\
+    	FOREIGN KEY(itemId) references item(itemId) ON DELETE CASCADE,\
+    	FOREIGN KEY(restaurantId) references restaurant(restaurantId) ON DELETE CASCADE,\
+    	FOREIGN KEY(userId) references user(userId) ON DELETE CASCADE )'\
         con = sqlite3.connect(self.db_path)
 
         with con:
@@ -229,7 +237,7 @@ class Engine(object):
                 return False
         return True
 
-    def create_friends_table(self):
+    def create_restaurant_table(self):
         '''
         Create the table ``friends`` programmatically, without using .sql file.
 
@@ -239,10 +247,10 @@ class Engine(object):
             otherwise.
         '''
         keys_on = 'PRAGMA foreign_keys = ON'
-        stmnt = 'CREATE TABLE friends (user_id INTEGER, friend_id INTEGER, \
-                     PRIMARY KEY(user_id, friend_id), \
-                     FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE, \
-                     FOREIGN KEY(friend_id) REFERENCES users(user_id) ON DELETE CASCADE)'
+        stmnt = 'CREATE TABLE restaurant (`restaurantId`	INTEGER PRIMARY KEY AUTOINCREMENT,\
+    	`restaurantName`	TEXT,\
+    	`address`	TEXT,\
+    	`phone`	TEXT)'
         #Connects to the database. Gets a connection object
         con = sqlite3.connect(self.db_path)
         with con:
@@ -257,6 +265,63 @@ class Engine(object):
                 print "Error %s:" % excp.args[0]
         return None
 
+    def create_restaurantUser_table(self):
+        '''
+        Create the table ``friends`` programmatically, without using .sql file.
+
+        Print an error message in the console if it could not be created.
+
+        :return: ``True`` if the table was successfully created or ``False``
+            otherwise.
+        '''
+        keys_on = 'PRAGMA foreign_keys = ON'
+        stmnt = 'CREATE TABLE restaurantUser (`id`	INTEGER PRIMARY KEY AUTOINCREMENT,\
+    	`restaurantid`	INTEGER,\
+    	`userid`	INTEGER,\
+    	FOREIGN KEY(userId) REFERENCES user(userId) ON DELETE CASCADE,\
+    	FOREIGN KEY(restaurantId) REFERENCES restaurant(restaurantId) ON DELETE CASCADE)'
+        #Connects to the database. Gets a connection object
+        con = sqlite3.connect(self.db_path)
+        with con:
+            #Get the cursor object.
+            #It allows to execute SQL code and traverse the result set
+            cur = con.cursor()
+            try:
+                cur.execute(keys_on)
+                #execute the statement
+                cur.execute(stmnt)
+            except sqlite3.Error as excp:
+                print "Error %s:" % excp.args[0]
+        return None
+
+    def create_item_table(self):
+        '''
+        Create the table ``friends`` programmatically, without using .sql file.
+
+        Print an error message in the console if it could not be created.
+
+        :return: ``True`` if the table was successfully created or ``False``
+            otherwise.
+        '''
+        keys_on = 'PRAGMA foreign_keys = ON'
+        stmnt = 'CREATE TABLE item (`itemId`	INTEGER PRIMARY KEY AUTOINCREMENT,\
+    	`itemName`	TEXT,\
+    	`description`	TEXT,\
+    	`vendorId`	TEXT,\
+    	FOREIGN KEY(`vendorId`) REFERENCES `vendor`(`vendorId`) ON DELETE CASCADE)'
+        #Connects to the database. Gets a connection object
+        con = sqlite3.connect(self.db_path)
+        with con:
+            #Get the cursor object.
+            #It allows to execute SQL code and traverse the result set
+            cur = con.cursor()
+            try:
+                cur.execute(keys_on)
+                #execute the statement
+                cur.execute(stmnt)
+            except sqlite3.Error as excp:
+                print "Error %s:" % excp.args[0]
+        return None
 
 class Connection(object):
     '''
@@ -686,11 +751,11 @@ class Connection(object):
                         * test_modify_message_malformed_id
                         * test_modify_message_noexisting_id
         '''
-        
+
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        
+
         get_message = 'SELECT * from messages WHERE message_id = ?'
         p_message = (messageid,)
         cur.execute(get_message, p_message)
@@ -698,7 +763,7 @@ class Connection(object):
         if not rowMessage:
             return None
 
-        query1 = 'UPDATE messages SET title = ?, body = ?, editor_nickname = ? WHERE message_id = ?'        
+        query1 = 'UPDATE messages SET title = ?, body = ?, editor_nickname = ? WHERE message_id = ?'
         if editor=='Anonymous':
             editor = None
         pvalue = (title, body, editor, messageid)
@@ -773,12 +838,12 @@ class Connection(object):
                 * test_append_answer_malformed_id
                 * test_append_answer_noexistingid
         '''
-        
+
         query1 = 'INSERT INTO messages (title,body,timestamp,ip,timesviewed, reply_to, user_nickname, user_id) VALUES ( ?, ?, ?, ?, ?, ?, ?, ? )'
         self.set_foreign_keys_support()
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        
+
         if replyto:
             get_replyTo_query = 'SELECT * from messages WHERE message_id = ?'
             p_reply_to = (replyto,)
@@ -790,20 +855,20 @@ class Connection(object):
                 return None
         else:
             replyto = None
-        
+
         timesviewed = 0
         timestamp = time.mktime(datetime.now().timetuple())
         user_nickname = sender
         get_user_query = 'SELECT user_id FROM users WHERE nickname=?'
         puser_nickname = (user_nickname,)
         cur.execute(get_user_query, puser_nickname)
-        rowUser = cur.fetchone()       
-        
+        rowUser = cur.fetchone()
+
         if rowUser:
             user_id = rowUser["user_id"]
         else:
             user_id = None
-            
+
         pvalue = (title,body,timestamp,ipaddress,timesviewed, replyto, user_nickname, user_id)
         cur.execute(query1, pvalue)
         self.con.commit()
@@ -1244,17 +1309,17 @@ class Connection(object):
                 * test_get_user_id
                 * test_get_user_id_unknown_user
         '''
-        
+
         query = 'SELECT user_id from users WHERE nickname = ?'
-        
+
         self.set_foreign_keys_support()
-        
+
         self.con.row_factory = sqlite3.Row
         cur = self.con.cursor()
-        
+
         pvalue = (nickname,)
         cur.execute(query, pvalue)
-        
+
         row = cur.fetchone()
         if row is None:
             return None
