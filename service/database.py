@@ -221,7 +221,7 @@ class Engine(object):
     	FOREIGN KEY(vendorId) references vendor(vendorId) ON DELETE CASCADE,\
     	FOREIGN KEY(itemId) references item(itemId) ON DELETE CASCADE,\
     	FOREIGN KEY(restaurantId) references restaurant(restaurantId) ON DELETE CASCADE,\
-    	FOREIGN KEY(userId) references user(userId) ON DELETE CASCADE )'\
+    	FOREIGN KEY(userId) references user(userId) ON DELETE CASCADE )'
         con = sqlite3.connect(self.db_path)
 
         with con:
