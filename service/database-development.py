@@ -515,6 +515,28 @@ class Connection(object):
         #Build the return object
         return self._create_vendor_object(row)
 
+    def delete_vendor(self, vendorid):
+
+        #Extracts the int which is the id for a message in the database
+        match = re.match(r'v-(\d{1,3})', vendorid)
+        if match is None:
+            raise ValueError("The messageid is malformed")
+        vendorid = int(match.group(1))
+
+        query = 'DELETE FROM vendor WHERE vendorId = ?'
+        #Activate foreign key support
+        self.set_foreign_keys_support()
+        #Cursor and row initialization
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+        #Execute the statement to delete
+        pvalue = (vendorid,)
+        cur.execute(query, pvalue)
+        self.con.commit()
+        #Check that it has been deleted
+        if cur.rowcount < 1:
+            return False
+        return True
 
 
 
@@ -543,6 +565,28 @@ class Connection(object):
         #Build the return object
         return self._create_item_object()
 
+    def delete_item(self, itemid):
+
+        #Extracts the int which is the id for a message in the database
+        match = re.match(r'v-(\d{1,3})', itemid)
+        if match is None:
+            raise ValueError("The messageid is malformed")
+        itemid = int(match.group(1))
+
+        query = 'DELETE FROM item WHERE itemId = ?'
+        #Activate foreign key support
+        self.set_foreign_keys_support()
+        #Cursor and row initialization
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+        #Execute the statement to delete
+        pvalue = (itemid,)
+        cur.execute(query, pvalue)
+        self.con.commit()
+        #Check that it has been deleted
+        if cur.rowcount < 1:
+            return False
+        return True
 
 
 
@@ -569,3 +613,26 @@ class Connection(object):
             return None
         #Build the return object
         return self._create_stock_object()
+
+    def delete_item(self, itemid):
+
+        #Extracts the int which is the id for a message in the database
+        match = re.match(r'v-(\d{1,3})', itemid)
+        if match is None:
+            raise ValueError("The messageid is malformed")
+        itemid = int(match.group(1))
+
+        query = 'DELETE FROM item WHERE itemId = ?'
+        #Activate foreign key support
+        self.set_foreign_keys_support()
+        #Cursor and row initialization
+        self.con.row_factory = sqlite3.Row
+        cur = self.con.cursor()
+        #Execute the statement to delete
+        pvalue = (itemid,)
+        cur.execute(query, pvalue)
+        self.con.commit()
+        #Check that it has been deleted
+        if cur.rowcount < 1:
+            return False
+        return True        
