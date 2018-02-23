@@ -493,10 +493,6 @@ class Connection(object):
     #API ITSELF
     #Vendor Table API.
     def get_vendor(self, vendorid):
-        match = re.match(r'v-(\d{1,3})', vendorid)
-        if match is None:
-            raise ValueError("The vendorID is malformed")
-        vendorid = int(match.group(1))
         #Activate foreign key support
         self.set_foreign_keys_support()
         #Create the SQL Query
@@ -517,12 +513,6 @@ class Connection(object):
 
     def delete_vendor(self, vendorid):
 
-        #Extracts the int which is the id for a message in the database
-        match = re.match(r'v-(\d{1,3})', vendorid)
-        if match is None:
-            raise ValueError("The messageid is malformed")
-        vendorid = int(match.group(1))
-
         query = 'DELETE FROM vendor WHERE vendorId = ?'
         #Activate foreign key support
         self.set_foreign_keys_support()
@@ -538,15 +528,41 @@ class Connection(object):
             return False
         return True
 
+    def append_vendor(self, vendor):
 
+       query1 = 'SELECT * from vendor WHERE Name = ?'
+       query2 = 'INSERT INTO vendor(vendorId,Name,address,email,phone)\
+                 VALUES(?,?,?,?,?)'
 
+       _Name = vendor.get('Name', None)
+       _address = vendor.get('address', None)
+       _email = vendor.get('email', None)
+       _phone = vendor.get('phone', None)
+       #Activate foreign key support
+       self.set_foreign_keys_support()
+       #Cursor and row initialization
+       self.con.row_factory = sqlite3.Row
+       cur = self.con.cursor()
+       #Execute the statement to extract the id associated to a nickname
+       pvalue = (_Name,)
+       cur.execute(query1, pvalue)
+       #No value expected (no other user with that nickname expected)
+       row = cur.fetchone()
+       #If there is no user add rows in user and user profile
+       if row is None:
+           #Add the row in users table
+           # Execute the statement
+           lid = cur.lastrowid
+           pvalue = (lid, _Name, _address, _email,_phone)
+           cur.execute(query2, pvalue)
+           self.con.commit()
+           #We do not do any comprobation and return the nickname
+           return _Name
+       else:
+           return None
 
     #Item Table API.
     def get_item(self, itemId):
-        match = re.match(r'it-(\d{1,3})', itemId)
-        if match is None:
-            raise ValueError("The itemID is malformed")
-        itemId = int(match.group(1))
         #Activate foreign key support
         self.set_foreign_keys_support()
         #Create the SQL Query
@@ -563,15 +579,9 @@ class Connection(object):
         if row is None:
             return None
         #Build the return object
-        return self._create_item_object()
+        return self._create_item_object(row)
 
     def delete_item(self, itemid):
-
-        #Extracts the int which is the id for a message in the database
-        match = re.match(r'v-(\d{1,3})', itemid)
-        if match is None:
-            raise ValueError("The messageid is malformed")
-        itemid = int(match.group(1))
 
         query = 'DELETE FROM item WHERE itemId = ?'
         #Activate foreign key support
@@ -644,25 +654,56 @@ class Connection(object):
         #Build the return object
         return self._create_stock_object()
 
-    def delete_item(self, itemid):
+    def delete_stock(self, stockId):
+       query = 'DELETE FROM stock WHERE stockId = ?'
+       #Activate foreign key support
+       self.set_foreign_keys_support()
+       #Cursor and row initialization
+       self.con.row_factory = sqlite3.Row
+       cur = self.con.cursor()
+       #Execute the statement to delete
+       pvalue = (stockId,)
+       cur.execute(query, pvalue)
+       self.con.commit()
+       #Check that it has been deleted
+       if cur.rowcount < 1:
+           return False
+       return True
 
-        #Extracts the int which is the id for a message in the database
-        match = re.match(r'v-(\d{1,3})', itemid)
-        if match is None:
-            raise ValueError("The messageid is malformed")
-        itemid = int(match.group(1))
+    def append_stock(self, stock):
+       query1 = 'SELECT * from stock WHERE itemId = ? AND restaurantId = ?'
+       query2 = 'INSERT INTO stock(id,price,quantity,quantityInStock,expireDate,date,transactionType,vendorId,itemId,restaurantId,userId)\
+                   VALUES(?,?,?,?,?,?,?,?,?,?,?)'
 
-        query = 'DELETE FROM item WHERE itemId = ?'
-        #Activate foreign key support
-        self.set_foreign_keys_support()
-        #Cursor and row initialization
-        self.con.row_factory = sqlite3.Row
-        cur = self.con.cursor()
-        #Execute the statement to delete
-        pvalue = (itemid,)
-        cur.execute(query, pvalue)
-        self.con.commit()
-        #Check that it has been deleted
-        if cur.rowcount < 1:
-            return False
-        return True        
+       _price = stock.get('price', None)
+       _quantity = stock.get('quantity', None)
+       _quantityInStock = stock.get('quantityInStock', None)
+       _expireDate = stock.get('expireDate', None)
+       _date = datetime.now()
+       _transactionType = stock.get('transactionType', None)
+       _vendorId = stock.get('vendorId', None)
+       _itemId = stock.get('itemId', None)
+       _restaurantId = stock.get('restaurantId', None)
+       _userId = stock.get('userId', None)
+
+       # Activate foreign key support
+       self.set_foreign_keys_support()
+       # Cursor and row initialization
+       self.con.row_factory = sqlite3.Row
+       cur = self.con.cursor()
+       # Execute the statement to extract the id associated to a itemId and restaurantId
+       pvalue = (_itemId,_restaurantId)
+       cur.execute(query1, pvalue)
+       # No value expected (no other user with that itemId and restaurantId expected)
+       row = cur.fetchone()
+       if row is None:
+           # Add the row in stock table
+           # Execute the statement
+           lid = cur.lastrowid
+           pvalue = (lid, _price, _quantity, _quantityInStock, _expireDate, _date, _transactionType, _vendorId, _itemId, _restaurantId, _userId)
+           cur.execute(query2, pvalue)
+           self.con.commit()
+           # We do not do any comprobation and return the nickname
+           return _date
+       else:
+           return None
